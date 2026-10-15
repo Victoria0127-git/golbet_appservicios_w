@@ -9,6 +9,7 @@
 @{
     var current = (MatchStatus?)ViewBag.CurrentStatus;
 }
+
 <div class="d-flex gap-2 flex-wrap mb-4">
     <a asp-action="Index"
        class="btn btn-sm @(current is null ? "btn-success" : "btn-outline-success")">
@@ -28,7 +29,11 @@
     </a>
 </div>
 
-<h2 class="mb-4">⚽ Cartelera de partidos</h2>
+<!-- Título con el d-flex y el botón "+ Nuevo partido" requerido -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>⚽ Cartelera de partidos</h2>
+    <a asp-action="Create" class="btn btn-success">+ Nuevo partido</a>
+</div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
     @foreach (var match in Model)
