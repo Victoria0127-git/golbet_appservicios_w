@@ -11,7 +11,9 @@ public class MatchRepository : GenericRepository<Match>, IMatchRepository
 {
     public MatchRepository(AppDbContext context) : base(context) { }
 
-    public async Task<IEnumerable<Match>> GetAllWithTeamsAsync(MatchStatus? status = null)
+    // Adds optional search parameter to filter by team name
+
+    public async Task<IEnumerable<Match>> GetAllWithTeamsAsync(MatchStatus? status = null, string? search = null)
     {
         var query = _dbSet
             .Include(m => m.HomeTeam)
@@ -25,6 +27,13 @@ public class MatchRepository : GenericRepository<Match>, IMatchRepository
             query = query.Where(m => m.Status == status.Value);
         }
 
+        //Team search filter (Home or Away) 
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var cleanSearch = search.Trim();
+            query = query.Where(m => m.HomeTeam.Name.Contains(cleanSearch) ||
+                                     m.AwayTeam.Name.Contains(cleanSearch));
+        }
         return await query.OrderBy(m => m.Date).ToListAsync();
     }
 

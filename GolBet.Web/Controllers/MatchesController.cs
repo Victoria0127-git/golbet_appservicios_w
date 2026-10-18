@@ -1,5 +1,5 @@
 ﻿using GolBet.Entities.Enums;
-using GolBet.Repositories.Data; // Permite acceder a DbSeeder.AdminRole
+using GolBet.Repositories.Data; // Provides access to DbSeeder.AdminRole
 using GolBet.Services.DTOs;
 using GolBet.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -13,22 +13,23 @@ public class MatchesController : Controller
     private readonly IMatchService _matchService;
     private readonly ITeamService _teamService;
 
-    // Se inyectan AMBOS servicios en el constructor
+    // BOTH services are injected into the constructor
     public MatchesController(IMatchService matchService, ITeamService teamService)
     {
         _matchService = matchService;
         _teamService = teamService;
     }
 
-    // GET /Matches -> Cartelera de partidos (PÚBLICO)
-    public async Task<IActionResult> Index(MatchStatus? status)
+    // GET /Matches -> Match board with optional status and team search filters (PUBLIC)
+    public async Task<IActionResult> Index(MatchStatus? status, string? search)
     {
         ViewBag.CurrentStatus = status;
-        var board = await _matchService.GetBoardAsync(status);
+        ViewBag.CurrentSearch = search;
+        var board = await _matchService.GetBoardAsync(status, search);
         return View(board);
     }
 
-    // GET /Matches/Detail/5 (PÚBLICO)
+    // GET /Matches/Detail/5 (PUBLIC)
     public async Task<IActionResult> Detail(int id)
     {
         var match = await _matchService.GetDetailAsync(id);
@@ -37,7 +38,7 @@ public class MatchesController : Controller
         return View(match);
     }
 
-    // GET /Matches/Create (SOLO ADMIN)
+    // GET /Matches/Create (ADMIN ONLY)
     [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Create()
     {
@@ -45,7 +46,7 @@ public class MatchesController : Controller
         return View(new MatchFormDto());
     }
 
-    // POST /Matches/Create (SOLO ADMIN)
+    // POST /Matches/Create (ADMIN ONLY)
     [HttpPost, ValidateAntiForgeryToken]
     [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Create(MatchFormDto dto)
@@ -70,7 +71,7 @@ public class MatchesController : Controller
         }
     }
 
-    // GET /Matches/Edit/5 (SOLO ADMIN)
+    // GET /Matches/Edit/5 (ADMIN ONLY)
     [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Edit(int id)
     {
@@ -81,7 +82,7 @@ public class MatchesController : Controller
         return View(dto);
     }
 
-    // POST /Matches/Edit (SOLO ADMIN)
+    // POST /Matches/Edit (ADMIN ONLY)
     [HttpPost, ValidateAntiForgeryToken]
     [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Edit(MatchFormDto dto)
@@ -106,7 +107,7 @@ public class MatchesController : Controller
         }
     }
 
-    // POST /Matches/Deactivate/5 (SOLO ADMIN)
+    // POST /Matches/Deactivate/5 (ADMIN ONLY)
     [HttpPost, ValidateAntiForgeryToken]
     [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Deactivate(int id)
@@ -116,7 +117,7 @@ public class MatchesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // Carga la lista desplegable de equipos para el select
+    // Loads the dropdown list of teams for the select element
     private async Task LoadTeamsAsync()
     {
         var teams = await _teamService.GetAllAsync();
