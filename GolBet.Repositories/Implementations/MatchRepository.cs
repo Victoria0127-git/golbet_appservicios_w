@@ -13,7 +13,7 @@ public class MatchRepository : GenericRepository<Match>, IMatchRepository
 
     // Adds optional search parameter to filter by team name
 
-    public async Task<IEnumerable<Match>> GetAllWithTeamsAsync(MatchStatus? status = null, string? search = null)
+    public async Task<IEnumerable<Match>> GetAllWithTeamsAsync(MatchStatus? status = null, string? search = null)   
     {
         var query = _dbSet
             .Include(m => m.HomeTeam)

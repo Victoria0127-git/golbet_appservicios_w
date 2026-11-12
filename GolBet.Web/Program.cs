@@ -9,12 +9,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using static System.Formats.Asn1.AsnWriter;
 
-// Configuración de fechas en español (es-CO)
-var culture = new CultureInfo("es-CO");
+var culture = new CultureInfo("es-Co");
+//Dates in Spanish, numbers neutral so model binding  reads "2.5" correctly
+culture.NumberFormat = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
+culture.NumberFormat.NumberGroupSeparator = ""; //"2.5" fails loudly, never binds as 25
+
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +50,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 
 // Specific repositories
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IBetRepository, BetRepository>();
 
 // AutoMapper: scans the assembly containing MappingProfile for all profiles
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -52,6 +58,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Business services
 builder.Services.AddScoped<IMatchService, MatchService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<IBetService, BetService>();
 
 var app = builder.Build();
 
@@ -62,7 +69,7 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
-    // Se pasan las tres variables requeridas por el método
+    // The three required variables are passed to the method
     await DbSeeder.SeedAsync(context, roleManager, userManager);
 }
 
