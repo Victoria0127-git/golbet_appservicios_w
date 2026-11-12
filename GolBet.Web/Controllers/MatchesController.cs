@@ -117,6 +117,62 @@ public class MatchesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // POST /Matches/Start/5 (ADMIN ONLY)
+    [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = DbSeeder.AdminRole)]
+    public async Task<IActionResult> Start(int id)
+    {
+        try
+        {
+            await _matchService.StartMatchAsync(id);
+            TempData["Success"] = "¡Partido en juego! Las apuestas quedaron cerradas.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    // GET /Matches/Close/5 -> the score form (ADMIN ONLY)
+    [Authorize(Roles = DbSeeder.AdminRole)]
+    public async Task<IActionResult> Close(int id)
+    {
+        var match = await _matchService.GetDetailAsync(id);
+        if (match is null) return NotFound();
+
+        ViewBag.Match = match;   // header data for the view
+        return View(new MatchResultFormDto { MatchId = id });
+    }
+
+    // POST /Matches/Close -> close and resolve (ADMIN ONLY)
+    [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = DbSeeder.AdminRole)]
+    public async Task<IActionResult> Close(MatchResultFormDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Match = await _matchService.GetDetailAsync(dto.MatchId);
+            return View(dto);
+        }
+
+        try
+        {
+            var summary = await _matchService.CloseMatchAsync(dto);
+            TempData["Success"] =
+                $"Partido cerrado {dto.HomeGoals}-{dto.AwayGoals}. " +
+                $"{summary.ResolvedBets} apuestas resueltas: {summary.WonBets} ganadas, " +
+                $"{summary.TotalPaid:N0} FutCoins pagados.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Detail), new { id = dto.MatchId });
+    }
+
     // Loads the dropdown list of teams for the select element
     private async Task LoadTeamsAsync()
     {
